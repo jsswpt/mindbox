@@ -78,12 +78,12 @@ $taskFilterList.on(addFilters, (state, payload) => {
     const payloadToFilters = payload.reduce((acc, curr) => {
         const filterData = filtersData[curr.name]
 
-        filterData.payload = curr.payload ? curr.payload : filterData.payload
+        const payload = curr.payload ? curr.payload : filterData.payload
 
         const newFilter = {
             [filterNameToType[curr.name]]: {
                 ...filterData,
-                fn: filterData.fn.bind(this),
+                fn: filterData.fn.bind({ payload }),
             },
         }
 
@@ -186,3 +186,5 @@ sample({
     },
     target: $currentTaskList,
 })
+
+$currentTaskList.watch(console.log)

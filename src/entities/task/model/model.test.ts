@@ -7,17 +7,18 @@ import {
     $filteredTaskList,
     $taskFilterList,
     $taskList,
+    addFilters,
     FilterNamesEnum,
     filtersData,
     FilterTypesEnum,
 } from './model'
-import type { Task, TaskFilterList } from './model.type'
+import type { AddFilters, Task, TaskFilterList } from './model.type'
 
 const mockTasks: Array<Task> = [
     {
         id: 1,
         isDone: false,
-        title: 'I am first task',
+        title: 'I am first task (test word)',
     },
     {
         id: 2,
@@ -33,15 +34,17 @@ const mockTasks: Array<Task> = [
 
 const filters: TaskFilterList = {
     [FilterTypesEnum.IS_DONE]: {
-        ...filtersData.DONE,
-        fn: filtersData.DONE.fn.bind({
-            payload: filtersData.DONE.payload,
+        ...filtersData[FilterNamesEnum.DONE],
+        fn: filtersData[FilterNamesEnum.DONE].fn.bind({
+            payload: filtersData[FilterNamesEnum.DONE].payload,
         }),
         name: FilterNamesEnum.DONE,
     },
     [FilterTypesEnum.TITLE]: {
-        ...filtersData.TITLE,
-        fn: filtersData.TITLE.fn.bind({ payload: { title: 'third' } }),
+        ...filtersData[FilterNamesEnum.TITLE],
+        fn: filtersData[FilterNamesEnum.TITLE].fn.bind({
+            payload: { title: 'third' },
+        }),
         name: FilterNamesEnum.TITLE,
         payload: {
             title: 'third',
@@ -51,15 +54,17 @@ const filters: TaskFilterList = {
 
 const otherFilters: TaskFilterList = {
     [FilterTypesEnum.IS_DONE]: {
-        ...filtersData.ACTIVE,
-        fn: filtersData.ACTIVE.fn.bind({
-            payload: filtersData.ACTIVE.payload,
+        ...filtersData[FilterNamesEnum.ACTIVE],
+        fn: filtersData[FilterNamesEnum.ACTIVE].fn.bind({
+            payload: filtersData[FilterNamesEnum.ACTIVE].payload,
         }),
         name: FilterNamesEnum.ACTIVE,
     },
     [FilterTypesEnum.TITLE]: {
-        ...filtersData.TITLE,
-        fn: filtersData.TITLE.fn.bind({ payload: { title: 'second' } }),
+        ...filtersData[FilterNamesEnum.TITLE],
+        fn: filtersData[FilterNamesEnum.TITLE].fn.bind({
+            payload: { title: 'second' },
+        }),
         name: FilterNamesEnum.TITLE,
         payload: {
             title: 'second',
@@ -121,5 +126,30 @@ describe('Test task model', () => {
             [getCachedKey(mockTasks, otherFilters)]: [mockTasks[1]],
             [getCachedKey(mockTasks, filters)]: [mockTasks[2]],
         })
+    })
+    test('Check if filters adding works correctly', async () => {
+        const scope = fork()
+
+        const addDefaultFilters = createEvent()
+
+        sample({
+            clock: addDefaultFilters,
+            fn: (): AddFilters => [
+                { name: FilterNamesEnum.ACTIVE },
+                {
+                    name: FilterNamesEnum.TITLE,
+                    payload: { title: '(test word)' },
+                },
+            ],
+            target: addFilters,
+        })
+
+        await allSettled(setDefaultTasks, { scope })
+
+        await allSettled(addDefaultFilters, { scope })
+
+        const filteredList = scope.getState($filteredTaskList)
+
+        expect(filteredList).toStrictEqual([mockTasks[0]])
     })
 })
