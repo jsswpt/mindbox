@@ -63,6 +63,15 @@ export const Component = () => {
                     </Chip.Group>
                 ) : (
                     <NativeSelect
+                        defaultValue={NONE}
+                        onChange={(e) =>
+                            handleChange(
+                                e.currentTarget.value as
+                                    | FilterName
+                                    | typeof NONE
+                            )
+                        }
+                        value={value}
                         size="xs"
                         data={filters.map(({ title: label, value }) => ({
                             label,
