@@ -6,6 +6,7 @@ import type {
     FilterName,
     FiltersData,
     FilterType,
+    RemoveFilter,
     Task,
     TaskFilterList,
 } from './model.type'
@@ -74,6 +75,8 @@ export const filterTasks = createEvent()
 
 export const addFilters = createEvent<AddFilters>()
 
+export const removeFilter = createEvent<RemoveFilter>()
+
 export const setFilteredTaskList = createEvent<Array<Task>>()
 
 export const cacheFilteredTaskList = createEvent<Array<Task>>()
@@ -98,9 +101,10 @@ $taskFilterList.on(addFilters, (state, payload) => {
 
         const payload = curr.payload ? curr.payload : filterData.payload
 
-        const newFilter = {
+        const newFilter: TaskFilterList = {
             [filterNameToType[curr.name]]: {
-                ...filterData,
+                name: curr.name,
+                payload,
                 fn: filterData.fn.bind({ payload }),
             },
         }
@@ -112,6 +116,17 @@ $taskFilterList.on(addFilters, (state, payload) => {
     }, state)
 
     return payloadToFilters
+})
+
+$taskFilterList.on(removeFilter, (state, payload) => {
+    if (state && payload in state) {
+        // eslint-disable-next-line
+        const { [payload]: _, ...rest } = state
+
+        return rest
+    }
+
+    return state
 })
 
 sample({

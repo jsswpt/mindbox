@@ -32,3 +32,5 @@ export type TaskFilter = {
 export type TaskFilterList = Partial<Record<FilterType, TaskFilter>>
 
 export type AddFilters = Array<Omit<TaskFilter, 'fn'>>
+
+export type RemoveFilter = FilterType

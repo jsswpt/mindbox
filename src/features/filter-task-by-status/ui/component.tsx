@@ -1,12 +1,20 @@
 import { Chip, NativeSelect, useMantineTheme } from '@mantine/core'
 import { useMediaQuery } from '@mantine/hooks'
+import { useUnit } from 'effector-react'
 
+import { handleChange, NONE } from '../model/model'
 import { Template } from './template'
+import {
+    $taskFilterList,
+    type FilterName,
+    FilterNamesEnum,
+    FilterTypesEnum,
+} from 'root/entities/task'
 
 const filterNameToTitle = {
-    NONE: 'All',
-    ACTIVE: 'Active',
-    DONE: 'Done',
+    [NONE]: 'All',
+    [FilterNamesEnum.ACTIVE]: 'Active',
+    [FilterNamesEnum.DONE]: 'Done',
 }
 
 type Filter = { title: string; value: string }
@@ -21,13 +29,24 @@ export const Component = () => {
 
     const isDesktop = useMediaQuery(`(min-width: ${theme.breakpoints.sm})`)
 
+    const filterList = useUnit($taskFilterList)
+
+    const value =
+        filterList && FilterTypesEnum.IS_DONE in filterList
+            ? (filterList[FilterTypesEnum.IS_DONE]?.name ?? NONE)
+            : NONE
+
     return (
         <Template
             items={
                 isDesktop ? (
                     <Chip.Group
                         multiple={false}
-                        defaultValue="NONE"
+                        defaultValue={NONE}
+                        value={value}
+                        onChange={(e) => {
+                            handleChange(e as FilterName | typeof NONE)
+                        }}
                         key={JSON.stringify(isDesktop)}
                     >
                         {filters.map(({ title, value }) => (
