@@ -1,4 +1,4 @@
-import { createEvent, createStore, sample } from 'effector'
+import { createEffect, createEvent, createStore, sample } from 'effector'
 
 import { getCachedKey } from '../lib'
 import type {
@@ -52,6 +52,22 @@ export const filtersData: Readonly<FiltersData> = {
     },
 }
 
+export const $getTasksFx = createEffect(() => {
+    const tasks = localStorage.getItem('tasks')
+
+    if (tasks) {
+        const parsedTasks = JSON.parse(tasks)
+
+        return typeof parsedTasks === 'string' ? [] : parsedTasks
+    }
+
+    return []
+})
+
+const $saveTaskFx = createEffect((tasks: Array<Task> | null) => {
+    localStorage.setItem('tasks', JSON.stringify(tasks))
+})
+
 const getFilteredList = createEvent<string>()
 
 export const filterTasks = createEvent()
@@ -74,6 +90,8 @@ export const $cachedTaskFilterList = createStore<Record<string, Array<Task>>>(
     {}
 )
 
+$taskList.on($getTasksFx.doneData, (_, payload) => payload)
+
 $taskFilterList.on(addFilters, (state, payload) => {
     const payloadToFilters = payload.reduce((acc, curr) => {
         const filterData = filtersData[curr.name]
@@ -94,6 +112,11 @@ $taskFilterList.on(addFilters, (state, payload) => {
     }, state)
 
     return payloadToFilters
+})
+
+sample({
+    clock: $taskList,
+    target: $saveTaskFx,
 })
 
 sample({
@@ -186,5 +209,3 @@ sample({
     },
     target: $currentTaskList,
 })
-
-$currentTaskList.watch(console.log)
