@@ -9,9 +9,9 @@
         "check:vitest": "vitest run",
         "fix:eslint": "eslint . --fix --cache --cache-location 'node_modules/.cache/.eslintcache'",
         "fix:prettier": "prettier . --write --cache --cache-location 'node_modules/.cache/.prettiercache'",
-        "watch:nodemon": "nodemon --watch . -e html,js,json,ts,tsx,md,css --exec",
-        "watch:eslint": "npm run watch:nodemon 'npm run fix:eslint'",
-        "watch:prettier": "npm run watch:nodemon 'npm run fix:prettier'",
+        "watch:nodemon": "nodemon --quiet --watch . -e html,js,json,ts,tsx,md,css --exec",
+        "watch:eslint": "npm run watch:nodemon 'echo 'Linting' && npm run fix:eslint'",
+        "watch:prettier": "npm run watch:nodemon 'echo 'Styling' && npm run fix:prettier'",
         "preview": "vite preview",
         "prepare": "husky",
         "test": "npm run check:vitest && npm run fix:eslint && npm run fix:prettier"
