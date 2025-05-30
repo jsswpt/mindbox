@@ -2,10 +2,10 @@ import { createEvent, sample } from 'effector'
 
 import { $taskList } from 'root/entities/task'
 
-export const handleClick = createEvent()
+export const clearCompletedTasks = createEvent()
 
 sample({
-    clock: handleClick,
+    clock: clearCompletedTasks,
     source: $taskList,
     filter: (taskList) => taskList !== null,
     fn: (taskList) => {

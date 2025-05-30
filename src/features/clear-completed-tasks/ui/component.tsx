@@ -1,10 +1,10 @@
 import { Button } from '@mantine/core'
 
-import { handleClick } from '../model'
+import { clearCompletedTasks } from '../model'
 
 export const Component = () => (
     <Button
-        onClick={() => handleClick()}
+        onClick={() => clearCompletedTasks()}
         size="xs"
         variant="transparent"
         color="red"
