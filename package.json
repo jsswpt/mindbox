@@ -1,17 +1,17 @@
 {
     "name": "mindbox",
-    "private": true,
     "version": "0.0.0",
     "type": "module",
     "scripts": {
         "watch": "vite",
         "build": "tsc -b && vite build",
+        "start": "npm run build && npm run preview",
         "check:vitest": "vitest run",
         "fix:eslint": "eslint . --fix --cache --cache-location 'node_modules/.cache/.eslintcache'",
         "fix:prettier": "prettier . --write --cache --cache-location 'node_modules/.cache/.prettiercache'",
-        "watch:nodemon": "nodemon --watch . -e html,js,json,ts,tsx,md --exec",
-        "watch:eslint": "npm run watch:nodemon 'npm run fix:eslint'",
-        "watch:prettier": "npm run watch:nodemon 'npm run fix:prettier'",
+        "watch:nodemon": "nodemon --quiet --watch . -e html,js,json,ts,tsx,md,css --exec",
+        "watch:eslint": "npm run watch:nodemon 'echo 'Linting' && npm run fix:eslint'",
+        "watch:prettier": "npm run watch:nodemon 'echo 'Styling' && npm run fix:prettier'",
         "preview": "vite preview",
         "prepare": "husky",
         "test": "npm run check:vitest && npm run fix:eslint && npm run fix:prettier"
@@ -20,6 +20,9 @@
         "@mantine/core": "^8.0.2",
         "@mantine/hooks": "^8.0.2",
         "@mantine/modals": "^8.0.2",
+        "@tabler/icons-react": "^3.33.0",
+        "effector": "^23.3.0",
+        "effector-react": "^23.3.0",
         "react": "^19.1.0",
         "react-dom": "^19.1.0"
     },
