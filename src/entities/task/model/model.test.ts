@@ -1,9 +1,8 @@
-import { allSettled, createEvent, fork, sample } from 'effector'
+import { allSettled, createEvent, fork } from 'effector'
 import { describe, expect, test } from 'vitest'
 
-import { getCachedKey } from '../lib'
 import {
-    $cachedTaskFilterList,
+    $currentTaskList,
     $filteredTaskList,
     $taskFilterList,
     $taskList,
@@ -11,10 +10,11 @@ import {
     FilterNamesEnum,
     filtersData,
     FilterTypesEnum,
+    removeFilter,
 } from './model'
-import type { AddFilters, Task, TaskFilterList } from './model.type'
+import type { Task, TaskFilterList } from './model.type'
 
-const mockTasks: Array<Task> = [
+const testTasks: Array<Task> = [
     {
         id: 1,
         isDone: false,
@@ -32,16 +32,14 @@ const mockTasks: Array<Task> = [
     },
 ]
 
-const filters: TaskFilterList = {
+const defaultFilters: TaskFilterList = {
     [FilterTypesEnum.IS_DONE]: {
-        ...filtersData[FilterNamesEnum.DONE],
         fn: filtersData[FilterNamesEnum.DONE].fn.bind({
             payload: filtersData[FilterNamesEnum.DONE].payload,
         }),
         name: FilterNamesEnum.DONE,
     },
     [FilterTypesEnum.TITLE]: {
-        ...filtersData[FilterNamesEnum.TITLE],
         fn: filtersData[FilterNamesEnum.TITLE].fn.bind({
             payload: { title: 'third' },
         }),
@@ -52,104 +50,90 @@ const filters: TaskFilterList = {
     },
 }
 
-const otherFilters: TaskFilterList = {
-    [FilterTypesEnum.IS_DONE]: {
-        ...filtersData[FilterNamesEnum.ACTIVE],
-        fn: filtersData[FilterNamesEnum.ACTIVE].fn.bind({
-            payload: filtersData[FilterNamesEnum.ACTIVE].payload,
-        }),
-        name: FilterNamesEnum.ACTIVE,
-    },
-    [FilterTypesEnum.TITLE]: {
-        ...filtersData[FilterNamesEnum.TITLE],
-        fn: filtersData[FilterNamesEnum.TITLE].fn.bind({
-            payload: { title: 'second' },
-        }),
-        name: FilterNamesEnum.TITLE,
-        payload: {
-            title: 'second',
-        },
-    },
-}
+const setTasks = createEvent<Array<Task>>()
 
-const setDefaultTasks = createEvent()
 const setFilters = createEvent<TaskFilterList>()
-const setDefaultFilters = createEvent()
-const setOtherFilters = createEvent()
 
-sample({
-    clock: setDefaultFilters,
-    fn: () => filters,
-    target: setFilters,
-})
-
-sample({
-    clock: setOtherFilters,
-    fn: () => otherFilters,
-    target: setFilters,
-})
-
-$taskList.on(setDefaultTasks, () => mockTasks)
+$taskList.on(setTasks, (_, payload) => payload)
 $taskFilterList.on(setFilters, (_, payload) => payload)
 
 describe('Test task model', () => {
-    test('Check if filters works correctly', async () => {
+    test("if the 'filteredTaskList' array is equal to 'currentTaskList' and the tasks exist, return true", async () => {
         const scope = fork()
 
-        await allSettled(setDefaultTasks, { scope })
+        await allSettled(setTasks, { params: testTasks, scope })
 
-        await allSettled(setDefaultFilters, { scope })
+        await allSettled(setFilters, { params: defaultFilters, scope })
 
-        await allSettled(setOtherFilters, { scope })
+        const filteredTaskList = scope.getState($filteredTaskList)
+        const currentTaskList = scope.getState($currentTaskList)
 
-        const taskFilters = scope.getState($taskFilterList)
-
-        const filteredList = scope.getState($filteredTaskList)
-
-        expect(taskFilters).toStrictEqual(otherFilters)
-        expect(filteredList).toStrictEqual([mockTasks[1]])
+        expect(filteredTaskList).toStrictEqual(currentTaskList)
     })
-    test('Check if filters cashing works correctly', async () => {
+
+    test("if the 'filteredTaskList' array is equal to 'currentTaskList' and the tasks are null, return true", async () => {
         const scope = fork()
 
-        await allSettled(setDefaultTasks, { scope })
+        await allSettled(setTasks, { params: null, scope })
 
-        await allSettled(setDefaultFilters, { scope })
+        await allSettled(setFilters, { params: defaultFilters, scope })
 
-        await allSettled(setOtherFilters, { scope })
+        const filteredTaskList = scope.getState($filteredTaskList)
+        const currentTaskList = scope.getState($currentTaskList)
 
-        await allSettled(setDefaultFilters, { scope })
-
-        const cachedFilteredList = scope.getState($cachedTaskFilterList)
-
-        expect(cachedFilteredList).toStrictEqual({
-            [getCachedKey(mockTasks, otherFilters)]: [mockTasks[1]],
-            [getCachedKey(mockTasks, filters)]: [mockTasks[2]],
-        })
+        expect(filteredTaskList).toStrictEqual(currentTaskList)
     })
-    test('Check if filters adding works correctly', async () => {
+
+    test("if, after deleting one of the several filters in the 'taskFilterList', the corresponding one disappears, but the rest remain, return true", async () => {
         const scope = fork()
 
-        const addDefaultFilters = createEvent()
-
-        sample({
-            clock: addDefaultFilters,
-            fn: (): AddFilters => [
-                { name: FilterNamesEnum.ACTIVE },
-                {
-                    name: FilterNamesEnum.TITLE,
-                    payload: { title: '(test word)' },
-                },
-            ],
-            target: addFilters,
+        await allSettled(setFilters, { params: defaultFilters, scope })
+        await allSettled(removeFilter, {
+            params: FilterTypesEnum.IS_DONE,
+            scope,
         })
 
-        await allSettled(setDefaultTasks, { scope })
+        const finalTaskFilterList = scope.getState($taskFilterList)
 
-        await allSettled(addDefaultFilters, { scope })
+        // eslint-disable-next-line
+        const { [FilterTypesEnum.IS_DONE]: deleted, ...filters } =
+            defaultFilters
 
-        const filteredList = scope.getState($filteredTaskList)
+        expect(finalTaskFilterList).toStrictEqual(filters)
+    })
 
-        expect(filteredList).toStrictEqual([mockTasks[0]])
+    test("if, after adding the filter, the 'taskFilterList' contains the corresponding one, return true", async () => {
+        const scope = fork()
+
+        await allSettled(addFilters, {
+            scope,
+            params: [{ name: FilterNamesEnum.DONE }],
+        })
+
+        const finalTaskFilterList = scope.getState($taskFilterList)
+
+        expect(Object.keys(finalTaskFilterList!)).toStrictEqual([
+            FilterTypesEnum.IS_DONE,
+        ])
+    })
+
+    test("if, after deleting the filter, the 'taskFilterList' does not contain a matching one, return true", async () => {
+        const scope = fork()
+
+        await allSettled(setFilters, {
+            scope,
+            params: defaultFilters,
+        })
+
+        await allSettled(removeFilter, {
+            scope,
+            params: FilterTypesEnum.IS_DONE,
+        })
+
+        const finalTaskFilterList = scope.getState($taskFilterList)
+
+        expect(Object.keys(finalTaskFilterList!)).toStrictEqual([
+            FilterTypesEnum.TITLE,
+        ])
     })
 })
