@@ -1,4 +1,4 @@
-import { createEvent, createStore, sample } from 'effector'
+import { createEffect, createEvent, createStore, sample } from 'effector'
 
 import { getCachedKey } from '../lib'
 import type {
@@ -6,6 +6,7 @@ import type {
     FilterName,
     FiltersData,
     FilterType,
+    RemoveFilter,
     Task,
     TaskFilterList,
 } from './model.type'
@@ -52,17 +53,41 @@ export const filtersData: Readonly<FiltersData> = {
     },
 }
 
+export const $getTasksFx = createEffect(() => {
+    const tasks = localStorage.getItem('tasks')
+
+    if (tasks) {
+        const parsedTasks = JSON.parse(tasks)
+
+        return typeof parsedTasks === 'string' ? [] : parsedTasks
+    }
+
+    return []
+})
+
+const $saveTaskFx = createEffect((tasks: Array<Task> | null) => {
+    localStorage.setItem('tasks', JSON.stringify(tasks))
+})
+
 const getFilteredList = createEvent<string>()
 
 export const filterTasks = createEvent()
 
 export const addFilters = createEvent<AddFilters>()
 
-export const setFilteredTaskList = createEvent<Array<Task>>()
+export const removeFilter = createEvent<RemoveFilter>()
 
-export const cacheFilteredTaskList = createEvent<Array<Task>>()
+export const setFilteredTaskList = createEvent<Array<Task> | null>()
+
+export const cacheFilteredTaskList = createEvent<Array<Task> | null>()
 
 export const $taskList = createStore<Array<Task> | null>(null)
+
+export const $tasksLeft = $taskList.map((store) =>
+    store !== null
+        ? store.reduce((acc, curr) => acc - (curr.isDone ? 1 : 0), store.length)
+        : 0
+)
 
 export const $filteredTaskList = createStore<Array<Task> | null>(null)
 
@@ -70,9 +95,11 @@ export const $currentTaskList = createStore<Array<Task> | null>(null)
 
 export const $taskFilterList = createStore<TaskFilterList | null>(null)
 
-export const $cachedTaskFilterList = createStore<Record<string, Array<Task>>>(
-    {}
-)
+export const $cachedTaskFilterList = createStore<
+    Record<string, Array<Task> | null>
+>({})
+
+$taskList.on($getTasksFx.doneData, (_, payload) => payload)
 
 $taskFilterList.on(addFilters, (state, payload) => {
     const payloadToFilters = payload.reduce((acc, curr) => {
@@ -80,9 +107,10 @@ $taskFilterList.on(addFilters, (state, payload) => {
 
         const payload = curr.payload ? curr.payload : filterData.payload
 
-        const newFilter = {
+        const newFilter: TaskFilterList = {
             [filterNameToType[curr.name]]: {
-                ...filterData,
+                name: curr.name,
+                payload,
                 fn: filterData.fn.bind({ payload }),
             },
         }
@@ -94,6 +122,22 @@ $taskFilterList.on(addFilters, (state, payload) => {
     }, state)
 
     return payloadToFilters
+})
+
+$taskFilterList.on(removeFilter, (state, payload) => {
+    if (state && payload in state) {
+        // eslint-disable-next-line
+        const { [payload]: _, ...rest } = state
+
+        return rest
+    }
+
+    return state
+})
+
+sample({
+    clock: $taskList,
+    target: $saveTaskFx,
 })
 
 sample({
@@ -114,8 +158,8 @@ sample({
 
 sample({
     clock: filterTasks,
-    filter: ({ taskFilters, tasks }) => {
-        if (taskFilters !== null && tasks?.length) {
+    filter: ({ taskFilters }) => {
+        if (taskFilters !== null) {
             return true
         }
 
@@ -126,10 +170,11 @@ sample({
             (data) => data[1]?.fn
         )
 
-        const result = tasks!.filter(
-            (task) =>
-                !filtersList.map((filter) => filter?.(task)).includes(false)
-        )
+        const result =
+            tasks?.filter(
+                (task) =>
+                    !filtersList.map((filter) => filter?.(task)).includes(false)
+            ) ?? null
 
         return result
     },
@@ -166,7 +211,7 @@ sample({
         filteredTaskList
     ) => ({
         ...cachedTaskFilterList,
-        [getCachedKey(taskList, taskFilterList)]: filteredTaskList ?? [],
+        [getCachedKey(taskList, taskFilterList)]: filteredTaskList,
     }),
     source: {
         cachedTaskFilterList: $cachedTaskFilterList,
@@ -186,5 +231,3 @@ sample({
     },
     target: $currentTaskList,
 })
-
-$currentTaskList.watch(console.log)
