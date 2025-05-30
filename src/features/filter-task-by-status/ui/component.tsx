@@ -63,7 +63,6 @@ export const Component = () => {
                     </Chip.Group>
                 ) : (
                     <NativeSelect
-                        defaultValue={NONE}
                         onChange={(e) =>
                             handleChange(
                                 e.currentTarget.value as

@@ -31,7 +31,7 @@ export const Component = () => {
                     <Title order={2} c="gray">
                         {tasks
                             ? `Current list is empty`
-                            : `Add your first task`}
+                            : `Create your first task`}
                     </Title>
                 </Flex>
             )}

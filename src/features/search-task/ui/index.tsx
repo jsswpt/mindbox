@@ -32,7 +32,7 @@ export const SearchTask = () => {
                 onChange={(e) => setInputValue(e.currentTarget.value)}
                 autoFocus
                 placeholder="Search by title"
-                type="text"
+                type="search"
                 name="title"
                 variant="unstyled"
                 style={{ height: '100%', width: '100%' }}

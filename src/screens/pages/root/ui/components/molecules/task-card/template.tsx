@@ -20,7 +20,7 @@ export const Template = ({
 }: TemplateProps) => (
     <Box pos="relative">
         <Paper withBorder style={{ overflow: 'hidden' }}>
-            <Paper px={8} shadow="xs" radius="xs" mb={1}>
+            <Paper px={16} shadow="xs" radius="xs" mb={1}>
                 {taskInput}
             </Paper>
             <Paper
@@ -35,7 +35,7 @@ export const Template = ({
             >
                 {list}
             </Paper>
-            <Paper px={8} py={8} shadow="xs" radius="xs">
+            <Paper px={16} py={8} shadow="xs" radius="xs">
                 <Flex align="center" justify="space-between">
                     <Box>{tasksLeft}</Box>
                     <Box>{statusFilter}</Box>

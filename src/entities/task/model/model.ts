@@ -77,11 +77,17 @@ export const addFilters = createEvent<AddFilters>()
 
 export const removeFilter = createEvent<RemoveFilter>()
 
-export const setFilteredTaskList = createEvent<Array<Task>>()
+export const setFilteredTaskList = createEvent<Array<Task> | null>()
 
-export const cacheFilteredTaskList = createEvent<Array<Task>>()
+export const cacheFilteredTaskList = createEvent<Array<Task> | null>()
 
 export const $taskList = createStore<Array<Task> | null>(null)
+
+export const $tasksLeft = $taskList.map((store) =>
+    store !== null
+        ? store.reduce((acc, curr) => acc - (curr.isDone ? 1 : 0), store.length)
+        : 0
+)
 
 export const $filteredTaskList = createStore<Array<Task> | null>(null)
 
@@ -89,9 +95,9 @@ export const $currentTaskList = createStore<Array<Task> | null>(null)
 
 export const $taskFilterList = createStore<TaskFilterList | null>(null)
 
-export const $cachedTaskFilterList = createStore<Record<string, Array<Task>>>(
-    {}
-)
+export const $cachedTaskFilterList = createStore<
+    Record<string, Array<Task> | null>
+>({})
 
 $taskList.on($getTasksFx.doneData, (_, payload) => payload)
 
@@ -152,8 +158,8 @@ sample({
 
 sample({
     clock: filterTasks,
-    filter: ({ taskFilters, tasks }) => {
-        if (taskFilters !== null && tasks?.length) {
+    filter: ({ taskFilters }) => {
+        if (taskFilters !== null) {
             return true
         }
 
@@ -164,10 +170,11 @@ sample({
             (data) => data[1]?.fn
         )
 
-        const result = tasks!.filter(
-            (task) =>
-                !filtersList.map((filter) => filter?.(task)).includes(false)
-        )
+        const result =
+            tasks?.filter(
+                (task) =>
+                    !filtersList.map((filter) => filter?.(task)).includes(false)
+            ) ?? null
 
         return result
     },
@@ -204,7 +211,7 @@ sample({
         filteredTaskList
     ) => ({
         ...cachedTaskFilterList,
-        [getCachedKey(taskList, taskFilterList)]: filteredTaskList ?? [],
+        [getCachedKey(taskList, taskFilterList)]: filteredTaskList,
     }),
     source: {
         cachedTaskFilterList: $cachedTaskFilterList,
