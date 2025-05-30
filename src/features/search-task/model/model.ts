@@ -19,7 +19,7 @@ sample({
 
 sample({
     clock: checkIfEmpty,
-    filter: (title) => !!title.replace(' ', '').length,
+    filter: (title) => !!title.replaceAll(' ', '').length,
     fn: (title): AddFilters => [
         { name: FilterNamesEnum.TITLE, payload: { title } },
     ],
@@ -28,7 +28,7 @@ sample({
 
 sample({
     clock: checkIfEmpty,
-    filter: (title) => !title.replace(' ', '').length,
+    filter: (title) => !title.replaceAll(' ', '').length,
     fn: (): RemoveFilter => FilterNamesEnum.TITLE,
     target: removeFilter,
 })

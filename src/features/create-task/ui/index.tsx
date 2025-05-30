@@ -11,7 +11,7 @@ export const CreateTask = () => {
             onSubmit={(e) => {
                 e.preventDefault()
 
-                if (title.replace(' ', '').length) {
+                if (title.replaceAll(' ', '').length) {
                     addTask(title)
                     setTitle('')
                 }
