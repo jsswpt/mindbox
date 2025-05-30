@@ -1,11 +1,11 @@
 {
     "name": "mindbox",
-    "private": true,
     "version": "0.0.0",
     "type": "module",
     "scripts": {
         "watch": "vite",
         "build": "tsc -b && vite build",
+        "start": "npm run build && npm run preview",
         "check:vitest": "vitest run",
         "fix:eslint": "eslint . --fix --cache --cache-location 'node_modules/.cache/.eslintcache'",
         "fix:prettier": "prettier . --write --cache --cache-location 'node_modules/.cache/.prettiercache'",
